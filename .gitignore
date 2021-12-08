@@ -2,3 +2,5 @@ pkg/*
 output/*
 *.csv
 .spyproject/*
+nltk_data/*
+models/*
