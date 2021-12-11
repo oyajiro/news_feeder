@@ -1,0 +1,29 @@
+version: '3.2'
+services:  
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+    ports:
+      - "3307:3306"
+    volumes:
+      - /home/user/other/docker/volumes/mysql:/var/lib/mysql
+    networks:
+      - newsfeeder
+  
+  news_feeder:
+    image: news_feeder:latest
+    command: tail -F /dev/null
+    volumes:
+      - /home/user/projects/go/news_feeder:/home/news_feeder
+      - $GOPATH/pkg/mod:/home/user/go/pkg/mod
+    networks:
+      - newsfeeder
+    depends_on:
+      - db
+
+networks:
+  newsfeeder:
+    driver: bridge      
