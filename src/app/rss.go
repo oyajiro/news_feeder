@@ -1,25 +1,29 @@
 package main
 
 import (
-	"encoding/csv"
+	"database/sql"
 	"fmt"
 	"log"
-	"os"
-	"os/exec"
+	// "os"
+	// "os/exec"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jdkato/prose"
+	"github.com/magiconair/properties"
 	"github.com/mmcdole/gofeed"
 )
 
 func main() {
-	// file, _ := os.Open("/home/user/Downloads/science.xml")
-	csvFile, err := os.OpenFile("../../texts.csv", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	p := properties.MustLoadFile("../../config.properties", properties.UTF8)
+	dbUser := p.MustGetString("mysql.user")
+	dbPassword := p.MustGetString("mysql.user")
+
+	db, err := sql.Open("mysql", dbUser+":"+dbPassword+"@tcp(127.0.0.1:3306)/db")
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err.Error())
 	}
-	csvwriter := csv.NewWriter(csvFile)
+
 	fp := gofeed.NewParser()
 	feed, _ := fp.ParseURL("https://www.reddit.com/r/science/.rss")
 	// feed, _ := fp.Parse(file)
@@ -27,20 +31,12 @@ func main() {
 	for _, it := range feed.Items {
 		if it.Title != "" {
 			var moreReplaced = strings.Replace(it.Description, " <!-- more -->", "", 1)
-			cmd := exec.Command("python", "./categorizer.py", moreReplaced)
-			mark, err := cmd.Output()
-
-			if err != nil {
-				println(err.Error())
-				return
-			}
-			var row = []string{it.Title + "\n" + moreReplaced, int(mark)}
-			_ = csvwriter.Write(row)
-			print(string(mark))
+			var row = it.Title + "\n" + moreReplaced
+			insert, _ := db.Query("INSERT INTO texts(text) VALUES ('" + row + "')")
+			defer insert.Close()
 		}
 	}
-	csvwriter.Flush()
-	csvFile.Close()
+	defer db.Close()
 }
 
 func createTokens(text string) []string {

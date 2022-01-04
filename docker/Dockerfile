@@ -22,7 +22,16 @@ RUN pip3 install tensorflow && \
     pip3 install imutils
 
 
-RUN apt install -y golang
+ENV GOLANG_VERSION 1.15.7
+
+# Install wget
+RUN apt-get update && apt-get install -y build-essential wget
+# Install Go
+RUN wget https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz
+RUN rm -f go${GOLANG_VERSION}.linux-amd64.tar.gz
+
+ENV PATH "$PATH:/usr/local/go/bin"
 
 # Tensorboard ports
 EXPOSE 6006
