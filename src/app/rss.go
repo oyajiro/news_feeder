@@ -4,24 +4,33 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+
 	// "os"
 	// "os/exec"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jdkato/prose"
 	"github.com/magiconair/properties"
 	"github.com/mmcdole/gofeed"
 )
 
+var db *sql.DB
+
 func main() {
 	p := properties.MustLoadFile("../../config.properties", properties.UTF8)
-	dbUser := p.MustGetString("mysql.user")
-	dbPassword := p.MustGetString("mysql.user")
-
-	db, err := sql.Open("mysql", dbUser+":"+dbPassword+"@tcp(127.0.0.1:3306)/db")
+	cfg := mysql.Config{
+		User:   p.MustGetString("mysql.user"),
+		Passwd: p.MustGetString("mysql.password"),
+		Net:    "tcp",
+		Addr:   "127.0.0.1:3306",
+		DBName: "db",
+	}
+	// Get a database handle.
+	var err error
+	db, err = sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
 
 	fp := gofeed.NewParser()
@@ -36,7 +45,6 @@ func main() {
 			defer insert.Close()
 		}
 	}
-	defer db.Close()
 }
 
 func createTokens(text string) []string {
